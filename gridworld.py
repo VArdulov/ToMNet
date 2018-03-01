@@ -12,7 +12,7 @@ class Environment:
         self.agents = {}
         self.a2i = {}
         self.i2a = {}
-
+        self.time_step = 0
         if grid is None:
             if len(shape) != 2 or type(shape[0]) is not int or type(shape[1]) is not int:
                 raise TypeError('Expected shape to be tuple of ints')
@@ -40,17 +40,19 @@ class Environment:
     def update(self, time_steps=1):
         for t in range(time_steps):
             for agent in self.agents:
-                agent.transition(self.grid)
+                self.agents[agent].transition(self.grid)
 
             for agent in self.agents:
-                agent.resolve(self.agents)
+                self.agents[agent].resolve(self.agents)
+
+            self.time_step += 1
 
         self.update_agent_grid()
 
     def update_agent_grid(self):
         self.agent_grid = self.grid.copy()
-        for agent in self.agents:
-            self.agent_grid[agent.pos[0], agent.pos[1]] = self.a2i[agent.name] #Deal with this later
+        for name, agent in self.agents.items():
+            self.agent_grid[agent.pos[0], agent.pos[1]] = self.a2i[name] #Deal with this later
 
     def add_agent(self, agent):
         self.agents[agent.name] = agent
@@ -58,7 +60,7 @@ class Environment:
         self.i2a[self.a2i[agent.name]] = agent.name
 
         for agent in self.agents:
-            agent.resolve(self.agents)
+            self.agents[agent].resolve(self.agents)
 
         self.update_agent_grid()
     # def pretty_print(self):
@@ -67,17 +69,19 @@ class Environment:
     #
     #         print('\t'.join(s))
 
+    def dump(self):
+        print()
     def show_image(self):
         im = np.zeros((self.shape[0], self.shape[1], 3))
         for y in range(self.shape[1]):
             for x in range(self.shape[0]):
-                if self.grid[x, y] == 0:
+                if self.agent_grid[x, y] == 0:
                     im[x, y, :] = np.ones(3)
-                elif self.grid[x, y] == -1:
+                elif self.agent_grid[x, y] == -1:
                     im[x, y, :] = np.zeros(3)
                 else:
                     im[x, y, :] = self.agents[self.i2a[self.agent_grid[x, y]]].color
-
+        plt.title('Time Step: %d'%self.time_step)
         plt.imshow(im)
         plt.show()
         return im
@@ -94,7 +98,7 @@ class Agent:
     def transition(self, grid):
         pass
 
-    def resolve(self, agents, map):
+    def resolve(self, agents):
         pass
 
 

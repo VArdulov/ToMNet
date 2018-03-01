@@ -15,8 +15,8 @@ class RandomAgent(Agent):
                         'east':(1,0),
                         'west':(-1, 0)}
 
-        self.index2action = {self.actions[a]: i for i, a in enumerate(self.actions)}
-        self.action2index = {a:self.index2action[a] for a in self.actions}
+        self.action2index = {a:i for i, a in enumerate(self.actions)}
+        self.index2action = {self.action2index[a]:a for a in self.actions}
         self.alpha = alpha
         self.distribution = dirichlet(alpha=(alpha,)*len(self.actions)) #dample a random dirichlet distribution
 
@@ -29,7 +29,7 @@ class RandomAgent(Agent):
         if x < x_edge and y < y_edge and x >= 0 and y >= 0:
             if grid[x, y] == 0:
                 self.pos = (self.pos[0] + move[0], self.pos[1] + move[1])
-    
+
 
 
 
