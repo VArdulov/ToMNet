@@ -5,9 +5,9 @@ import seaborn as sns
 sns.set_context('poster')
 sns.set_style("whitegrid", {'axes.grid' : False})
 
-#Generic Environment Class
-class Environment:
 
+# Generic Environment Class
+class Environment:
     def __init__(self, grid=None, shape=None, coverage=None):
         self.agents = {}
         self.a2i = {}
@@ -20,8 +20,9 @@ class Environment:
                 raise ValueError('Expected coverage to be [0, 1]')
 
             self.shape = shape
-            self.grid = np.zeros(shape)
-            self.agent_grid = np.zeros(shape)
+            self.grid = np.zeros(shape) #Wall
+            self.object_grid = np.zeros(shape) #Objects
+            self.agent_grid = np.zeros(shape) #Agents
 
             N = int(shape[0] * shape[1] * coverage)
             n = 0
@@ -29,13 +30,11 @@ class Environment:
                 x_rand = random.randint(0, shape[0]-1)
                 y_rand = random.randint(0, shape[1]-1)
                 if self.grid[x_rand, y_rand] == 0:
-                    self.grid[x_rand, y_rand] = -1
-                    self.agent_grid[x_rand, y_rand] = -1
+                    self.grid[x_rand, y_rand] = 1
                     n += 1
         else:
             self.shape = grid.shape
             self.grid = grid
-            self.agent_grid = grid
 
     def update(self, time_steps=1):
         for t in range(time_steps):
@@ -50,9 +49,9 @@ class Environment:
         self.update_agent_grid()
 
     def update_agent_grid(self):
-        self.agent_grid = self.grid.copy()
+        self.agent_grid = np.zeros(self.shape)
         for name, agent in self.agents.items():
-            self.agent_grid[agent.pos[0], agent.pos[1]] = self.a2i[name] #Deal with this later
+            self.agent_grid[agent.pos[0], agent.pos[1]] += 1 #Deal with this later
 
     def add_agent(self, agent):
         self.agents[agent.name] = agent
@@ -63,24 +62,26 @@ class Environment:
             self.agents[agent].resolve(self.agents)
 
         self.update_agent_grid()
-    # def pretty_print(self):
-    #
-    #     for y in range(self.shape[1]):
-    #
-    #         print('\t'.join(s))
 
-    def dump(self):
-        print()
+    def observe_state(self):
+        return np.vstack((self.grid.reshape(1, self.shape[0], self.shape[1]),
+                          self.object_grid.reshape(1, self.shape[0], self.shape[1]),
+                          self.agent_grid.reshape(1, self.shape[0], self.shape[1])))
+
+
     def show_image(self):
         im = np.zeros((self.shape[0], self.shape[1], 3))
         for y in range(self.shape[1]):
             for x in range(self.shape[0]):
-                if self.agent_grid[x, y] == 0:
-                    im[x, y, :] = np.ones(3)
-                elif self.agent_grid[x, y] == -1:
+                if self.grid[x, y] == 1:
                     im[x, y, :] = np.zeros(3)
+                elif self.agent_grid[x, y] > 0:
+                    for agent in self.agents:
+                        if self.agents[agent].pos[0] == x and self.agents[agent].pos[1] == y:
+                            im[x, y, :] = self.agents[agent].color
                 else:
-                    im[x, y, :] = self.agents[self.i2a[self.agent_grid[x, y]]].color
+                    im[x, y, :] = np.ones(3)
+
         plt.title('Time Step: %d'%self.time_step)
         plt.imshow(im)
         plt.show()
@@ -101,6 +102,23 @@ class Agent:
     def resolve(self, agents):
         pass
 
+    def state_observe(self):
+        pass
+
+    def action_observe(self):
+        pass
+
+class Object:
+    def __init__(self, name, pos=(0,0), color=np.array([1, 0, 0])):
+        self.name = name
+        self.pos = pos
+        self.color = color
+
+    def resolve(self):
+        pass
+
+    def state_observe(self):
+        pass
 
 
 
